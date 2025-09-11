@@ -1,5 +1,3 @@
-# Enhancing Code Quality with AI Code Reviews
-
 [원본 링크: Enhancing Code Quality at Scale with AI-Powered Code Reviews](https://devblogs.microsoft.com/engineering-at-microsoft/enhancing-code-quality-at-scale-with-ai-powered-code-reviews/)
 
 본인 팀에서 PR에 AI 어시스턴트를 도입해 활용하고 있다는 사례를 소개한다. 기존의 코드 리뷰(PR) 과정에서는 null 체크 누락, 잘못된 API 호출, 단순한 스타일 문제처럼 반복적이고 낮은 가치의 피드백에 시간이 소모되곤 한다. 그러나 코드 리뷰의 본질적 가치는 아키텍처 결정이나 보안 결함 등 더 큰 그림을 다루는 데 있다. 이를 보완하기 위해 Microsoft는 AI 기반 리뷰어를 통합했다고 한다.
