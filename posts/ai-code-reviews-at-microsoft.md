@@ -1,13 +1,13 @@
-# Enhancing Code Quality with AI Code Reviews
+# 25.09.10 - Enhancing Code Quality with AI Code Reviews
 
-**3-line summary**
-- AI catches trivial issues (null checks, wrong endpoints) early.
-- Human reviewers focus on architecture and security.
-- PR cycle time drops; developer satisfaction improves.
+[원본 링크: Enhancing Code Quality at Scale with AI-Powered Code Reviews](https://devblogs.microsoft.com/engineering-at-microsoft/enhancing-code-quality-at-scale-with-ai-powered-code-reviews/)
 
-**1-line insight**  
-Automate the *obvious* so humans can debate the *important*.
+본인 팀에서 PR에 AI 어시스턴트를 도입해 활용하고 있다는 사례를 소개한다. 기존의 코드 리뷰(PR) 과정에서는 null 체크 누락, 잘못된 API 호출, 단순한 스타일 문제처럼 반복적이고 낮은 가치의 피드백에 시간이 소모되곤 한다. 그러나 코드 리뷰의 본질적 가치는 아키텍처 결정이나 보안 결함 등 더 큰 그림을 다루는 데 있다. 이를 보완하기 위해 Microsoft는 AI 기반 리뷰어를 통합했다고 한다.
 
-## Notes
-- Good guardrails and high-precision prompts matter.
-- Start with non-blocking comments; build trust, then gate.
+- **간단한 실수 자동 검출**: 반복적이고 덜 본질적인 문제를 AI가 사전에 찾아내어 리뷰어의 부담을 줄이고 코드 신뢰성을 높인다.
+- **코드 품질 향상 및 즉각적 피드백**: AI는 수정된 코드에 대해 바로 대화하듯 피드백을 제공하며, 품질 향상 사례도 보고되었다(예: null 체크 누락 방지, 잘못된 API 호출 순서 검출).
+- **PR 요약 생성**: 의도나 주요 변경점이 불명확한 경우, AI가 자동 요약을 제공해 리뷰어가 변경사항을 빠르게 이해할 수 있도록 돕는다.
+
+도입 결과, 초기 적용된 저장소들에서는 PR 완료 시간이 중앙값 기준 약 10~20% 단축되었고 품질 또한 개선되었다(다만 구체적인 수치 지표는 일부 생략되었다). 또한 AI 리뷰어는 각 팀의 가이드라인이나 프롬프트를 반영해 맞춤형으로 사용할 수 있다는 장점이 있다.
+
+작성자는 이러한 AI 리뷰어가 코드 리뷰 문화에 대규모 변화를 일으킬 촉매가 될 것이라 언급하며, 내부와 외부 도구가 서로 영향을 주고받는 “공진화(co-evolution)” 개념을 소개한다. 이후는 개인적인 생각이지만, 바이브 코딩이나 코드 리뷰와 같이 AI는 이제 개발자가 적극적으로 활용해야 하는 도구이며, 작성자가 말한 공진화처럼 개발자와 AI가 함께 발전해 나가고 있다고 본다.
