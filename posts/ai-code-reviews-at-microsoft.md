@@ -1,4 +1,4 @@
-# 25.09.10 - Enhancing Code Quality with AI Code Reviews
+# Enhancing Code Quality with AI Code Reviews
 
 [원본 링크: Enhancing Code Quality at Scale with AI-Powered Code Reviews](https://devblogs.microsoft.com/engineering-at-microsoft/enhancing-code-quality-at-scale-with-ai-powered-code-reviews/)
 

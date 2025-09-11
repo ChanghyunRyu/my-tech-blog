@@ -11,7 +11,7 @@ export default function Post() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`/` + import.meta.env.BASE_URL + `posts/${slug}.md`.replace('//', '/'))
+        const res = await fetch(`${import.meta.env.BASE_URL}posts/${slug}.md`)
         const text = await res.text()
         setHtml(marked.parse(text))
       } catch (e) {
