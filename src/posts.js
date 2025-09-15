@@ -15,5 +15,13 @@ export default [
     category: 'daily', // 'daily' for 기술 블로그, 'weekly' for IT 서적
     tags: ['E2E Test', 'Regression Test'],
     summary: 'How to automate E2E regression tests for 1:1 video chat.'
+  },
+  {
+    slug: 'dispatch-accuracy-and-actual-distance-placement',
+    title: '우아한 기술블로그 - 배차 정확도를 높이는 실거리 시스템 구축기',
+    date: '2025-09-15',
+    category: 'daily', // 'daily' for 기술 블로그, 'weekly' for IT 서적
+    tags: ['Redis', 'Kafka', 'OSRM'],
+    summary: 'How to build a real-distance system to improve dispatch accuracy.'
   }
 ]
