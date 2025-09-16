@@ -23,5 +23,13 @@ export default [
     category: 'daily', // 'daily' for 기술 블로그, 'weekly' for IT 서적
     tags: ['Redis', 'Kafka', 'OSRM'],
     summary: 'How to build a real-distance system to improve dispatch accuracy.'
+  },
+  {
+    slug: '4-essential-things-for-adopting-SAP-Cloud-ERP',
+    title: 'LG CNS - SAP 클라우드 ERP 도입을 고려하는 기업에 꼭 필요한 4가지',
+    date: '2025-09-16',
+    category: 'daily', // 'daily' for 기술 블로그, 'weekly' for IT 서적
+    tags: ['SAP', 'ERP', 'Cloud'],
+    summary: 'What are the four essential things for adopting SAP Cloud ERP?'
   }
 ]
