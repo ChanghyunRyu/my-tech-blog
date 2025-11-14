@@ -1,33 +1,28 @@
-# GitHub Pages — React Blog Minimal
+# My Tech Blog
 
-A minimal React + Vite blog scaffold ready for GitHub Pages.
+이 저장소는 개인 기술 블로그와 향후 실험/프로젝트를 함께 관리하기 위한 공간입니다.  
+`blog/` 디렉터리에는 GitHub Pages로 배포되는 React + Vite 기반 블로그가 들어 있습니다.
 
-## Quick Start
-1) Replace placeholders in files:
-   - `package.json` -> `"homepage": "https://<YOUR_GITHUB_USERNAME>.github.io/<YOUR_REPO_NAME>/"`
-   - `vite.config.js` -> `base: '/<YOUR_REPO_NAME>/'`
-   - `src/main.jsx` -> `basename: '/<YOUR_REPO_NAME>'`
-   - `src/ui/App.jsx` GitHub repo link
+## 디렉터리 구조
+- `blog/` — 블로그 앱 (React + Vite)
+  - `src/` — 컴포넌트 및 라우터
+  - `public/posts/` — 배포되는 Markdown 원문
+  - `dist/` — Vite 빌드 결과 (GitHub Actions에서 생성)
+- 기타 상위 디렉터리 — 앞으로 추가할 실험/프로젝트를 위한 공간
 
-2) Install
+## 로컬 개발
 ```bash
-npm i
+cd blog
+npm install
 npm run dev
 ```
+개발 서버는 기본적으로 `http://localhost:5173` 에서 실행됩니다.
 
-3) Add a post
-- Create `posts/my-new-post.md`
-- Append metadata in `src/posts.js`:
-  ```js
-  { slug: 'my-new-post', title: 'My New Post', date: '2025-09-11', tags: ['AI'], summary: 'Short summary...' }
-  ```
+## 포스트 추가
+1. Markdown 파일을 `blog/public/posts/*.md` 에 작성합니다.
+2. `blog/src/posts.js` 에 메타데이터(슬러그/제목/태그/요약 등)를 추가합니다.
 
-4) Deploy to GitHub Pages (gh-pages branch)
-```bash
-npm run deploy
-```
-Then in GitHub repo → Settings → Pages → "Branch: gh-pages / root".
+## 배포
+메인 브랜치에 `blog/` 관련 변경사항을 push 하면 `.github/workflows/deploy.yml` GitHub Actions가 실행되어 `blog/` 안에서 빌드 후 Pages로 배포합니다.
 
-## Notes
-- This template uses SPA routing with a `404.html` redirect hack suitable for GitHub Pages.
-- For custom domains, configure `base` and add a `CNAME` file in the project root.
+필요 시 `blog/vite.config.js`, `blog/src/main.jsx` 등에서 `base`/`basename` 값을 조정하여 커스텀 도메인이나 리포지토리 경로를 맞출 수 있습니다.
