@@ -84,7 +84,7 @@ Thumbs.db
 
 # TTS artifacts
 lab/tts/output/
-lab/tts/_pycache/
+lab/tts/__pycache__/
 lab/tts/models/
 lab/tts/research/
 
