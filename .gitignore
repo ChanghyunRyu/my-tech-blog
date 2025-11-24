@@ -88,3 +88,6 @@ lab/tts/__pycache__/
 lab/tts/models/
 lab/tts/research/
 lab/tts/dataset/
+lab/tts/xtts-v2/checkpoints/
+lab/tts/xtts-v2/metadata_eval.csv
+lab/tts/xtts-v2/metadata_train.csv
