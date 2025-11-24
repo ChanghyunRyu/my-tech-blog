@@ -11,7 +11,7 @@ tts = TTS(model_name="tts_models/multilingual/multi-dataset/xtts_v2").to(device)
 tts.tts_to_file(
     text="안녕하세요. 오늘은 날씨가 좋네요. 아이 캔 스피크 잉글리쉬.",
     language="ko",
-    speaker_wav="output/karina-tts-file-2.wav",
+    speaker_wav="output/output.wav",
     file_path="output/test_params.wav",
     
     # 제어 가능한 파라미터들
