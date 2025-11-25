@@ -91,3 +91,4 @@ lab/tts/dataset/
 lab/tts/xtts-v2/checkpoints/
 lab/tts/xtts-v2/metadata_eval.csv
 lab/tts/xtts-v2/metadata_train.csv
+lab/tts/chatterBox/.venv-chatterbox/

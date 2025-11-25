@@ -1,0 +1,3 @@
+numpy
+chatterbox-tts
+torchaudio
