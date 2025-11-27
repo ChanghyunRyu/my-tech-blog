@@ -143,19 +143,25 @@ def read_count_sym_kor(symbol: str) -> str:
 
 
 def load_base_eng2kor_dict() -> dict[str, str]:
-    dataset = []
-    for data_name in glob.glob('transliteration/data/source/*'):
-        with open(data_name, 'r') as f:
-            lines = f.read().splitlines()
-            cleaned = [line.split('\t') for line in lines[3:] if '\t' in line]
-            dataset.extend(cleaned)
+    """
+    dataset/base_eng2kor_dict.json 파일에서 영어-한글 사전을 로드
     
-    data_dict = {
-        re.sub(' +', ' ', eng).lower():
-        re.sub(' +', ' ', kor)
-            for eng, kor in dataset
-    }
-    return data_dict
+    Returns:
+        dict[str, str]: 영어 단어(소문자)를 한글 표기로 매핑하는 딕셔너리
+    """
+    json_path = Path(__file__).parent / 'dataset' / 'base_eng2kor_dict.json'
+    
+    if not json_path.exists():
+        print(f"경고: {json_path} 파일을 찾을 수 없습니다.")
+        return {}
+    
+    try:
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data_dict = json.load(f)
+        return data_dict
+    except Exception as e:
+        print(f"경고: {json_path} 파일 읽기 실패: {e}")
+        return {}
 
 
 # --- 예외 처리용 user dictionary load 
@@ -200,5 +206,67 @@ def read_acronym2kor(term: str) -> str:
     return ''.join(result)
 
 
+# Hugging Face 모델을 위한 전역 변수 (lazy initialization)
+_transliterator_model = None
+_transliterator_tokenizer = None
+
+
 def read_engbymodel(term: str) -> str:
-    return term
+    global _transliterator_model, _transliterator_tokenizer
+    
+    # 모델이 없으면 로드 (lazy initialization)
+    if _transliterator_model is None or _transliterator_tokenizer is None:
+        try:
+            from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+            
+            model_checkpoint = "eunsour/en-ko-transliterator"
+            print(f"영한 변환 모델 로딩 중: {model_checkpoint} (처음 한 번만 로드됩니다)")
+            
+            _transliterator_tokenizer = AutoTokenizer.from_pretrained(
+                model_checkpoint, 
+                src_lang="en", 
+                tgt_lang="ko"
+            )
+            _transliterator_model = AutoModelForSeq2SeqLM.from_pretrained(model_checkpoint)
+            
+            # 모델을 평가 모드로 설정 (드롭아웃 등 비활성화)
+            _transliterator_model.eval()
+            
+        except ImportError:
+            print("경고: transformers 라이브러리가 설치되어 있지 않습니다.")
+            print("      설치: pip install transformers torch")
+            return term
+        except Exception as e:
+            print(f"경고: 모델 로딩 실패: {e}")
+            return term
+    
+    # 변환 수행
+    try:
+        # 입력 토크나이징
+        encoded_en = _transliterator_tokenizer(
+            term, 
+            truncation=True, 
+            max_length=48, 
+            return_tensors="pt"
+        )
+        
+        # 생성 (추론 모드)
+        generated_tokens = _transliterator_model.generate(
+            **encoded_en,
+            max_new_tokens=48,  # max_length 대신 max_new_tokens 사용
+            num_beams=1,  # 빠른 추론을 위해 beam search 비활성화
+        )
+        
+        # 디코딩
+        result = _transliterator_tokenizer.batch_decode(
+            generated_tokens, 
+            skip_special_tokens=True
+        )
+        
+        if result and len(result) > 0:
+            return result[0].strip()
+        else:
+            return term
+    except Exception as e:
+        print(f"경고: 변환 실패 ({term}): {e}")
+        return term

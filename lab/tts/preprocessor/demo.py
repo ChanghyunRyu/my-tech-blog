@@ -11,8 +11,8 @@ TEST_CASES = [
 
 for text in TEST_CASES:
     start_time = time.time()
-    s, particles, chunks = normalizer.align_text(text)
+    new_text = normalizer.trans_sentence(text)
     end_time = time.time()
-    print(particles)
-    print(chunks)
     print(f"Time taken: {end_time - start_time} seconds")
+    print(new_text)
+    print("-"*100)

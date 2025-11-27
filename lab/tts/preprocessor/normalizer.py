@@ -12,6 +12,9 @@ _mecab_instance = None
 Morph = tuple[str, str]
 ENG2KOR_DICT =  load_eng2kor_dict()
 
+particles_final = ['은', '이', '과', '을', '이다']
+particles_not_final = ['는', '가', '와', '를', '다']
+
 
 def check_typos(text: str) -> str:
     """
@@ -197,15 +200,60 @@ def trans_bundle(chunks: list[tuple[str]], chunks_snapshot: list[list[Morph]]) -
     for i in range(len(chunks)):
         eojeol = chunks[i]
 
-        prev, nxt = get_context(i, j, chunks_snapshot)
-
         for j in range(len(eojeol)):
             term = eojeol[j]
+            prev, nxt = get_context(i, j, chunks_snapshot)
+            # --- number ---
             if term.isdigit():
                 n = int(term)
                 chunks[i][j] = trans_num2kor(n, prev, nxt)
+            # --- symbol ---
             elif term in symbols + count_symbols and (i+j > 0):
                 chunks[i][j] = trans_sym2kor(term, prev, nxt)
+            # --- english ---
             elif chunks_snapshot[i][j][1].startswith("SL"):
                 chunks[i][j] = trans_eng2kor(term)
-    return 
+                print('english:{} -> korean:{}'.format(term, chunks[i][j]))
+            # --- hangul ---
+            elif hgtk.checker.is_hangul(term):
+                if chunks_snapshot[i][j][1].startswith("JX") and (term in particles_final or term in particles_not_final):
+                    chunks[i][j] = correction_particle(prev, term)
+                else:
+                    chunks[i][j] = term
+            else:
+                # --- exception case ---
+                chunks[i][j] = ''
+    return chunks
+
+
+def correction_particle(prev: str, term: str) -> str:
+    if not prev:
+        return term
+
+    last = prev[-1]
+    
+    if not hgtk.checker.is_hangul(last):
+        return term
+
+    _, _, final = hgtk.letter.decompose(last)
+    has_final = (final != '')
+
+    if term in particles_final and not has_final:
+        return particles_not_final[particles_final.index(term)]
+    
+    if term in particles_not_final and has_final:
+        return particles_final[particles_not_final.index(term)]
+    
+    return term
+
+
+def trans_sentence(sentence: str) -> str:
+    sentence = check_typos(sentence)
+    if hgtk.checker.is_hangul(sentence):
+        return sentence
+    
+    _, _, chunks_snapshot = align_text(sentence)
+    chunks = [[m[0] for m in eojeol] for eojeol in chunks_snapshot]
+    chunks = trans_bundle(chunks, chunks_snapshot)
+    chunks = [''.join(e) for e in chunks]
+    return ' '.join(chunks)
