@@ -1,6 +1,7 @@
 import string
-from lexicon import _SINO_DIGITS, _SINO_SMALL_UNITS, _SINO_BIG_UNITS, _NATIVE_ONES, _NATIVE_TENS, _COUNTER_READER
+from lexicon import _SINO_DIGITS, _SINO_SMALL_UNITS, _SINO_BIG_UNITS, _NATIVE_ONES, _NATIVE_TENS
 from lexicon import ENG_NUM_0, ENG_NUM_TENS, ENG_NUM_TEEN, ENG_NUM_READ_PER_DIGIT
+from lexicon import symbols, sym_kor, sym_eng, count_symbols, count_sym_kor
 
 
 def read_sino_kor(n: int) -> str:
@@ -75,7 +76,9 @@ def read_native_kor(n: int) -> str:
 
 
 def read_counter_kor(n: int, nxt: str) -> str:
-    reader = _COUNTER_READER.get(nxt, read_sino_kor)
+    from lexicon import _get_counter_reader
+    counter_reader = _get_counter_reader()
+    reader = counter_reader.get(nxt, read_sino_kor)
     return reader(n)
 
 
@@ -120,3 +123,15 @@ def read_num_eng(n: int) -> str:
 
 def check_latin(term: str) -> bool:
     return any(ch in string.ascii_letters for ch in term)
+
+
+def read_sym_kor(symbol: str) -> str:
+    return sym_kor[symbols.index(symbol)]
+
+
+def read_sym_eng(symbol: str) -> str:
+    return sym_eng[symbols.index(symbol)]
+
+
+def read_count_sym_kor(symbol: str) -> str:
+    return count_sym_kor[count_symbols.index(symbol)]

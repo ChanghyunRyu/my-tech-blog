@@ -1,5 +1,18 @@
+import time
 import normalizer
 
+TEST_CASES = [
+    "내일 morning meeting에서 새로운 API를 같이 리뷰할 예정입니다.",
+    "임진왜란은 1592년에 발생했습니다.",
+    "PyTorch 3차 세미나, Kaggle 2회 대회, AI Bootcamp 3기 모집, NLP 2학년 수업, Cloud 3호 라인",
+    "Sprint 3일차 회고, Season 2분기 실적!",
+    "제 전화번호는 010-2629-3115 입니다?"
+]
 
-text = "이 기능은 real-time rendering을 사용합니다. 이번 프로젝트는 server-side rendering 구조입니다. 모델 학습은 Python script로 실행합니다. 권한 관리에는 OAuth 2.0을 사용합니다. 배포는 CI/CD pipeline으로 자동화되었습니다."
-print(normalizer.normalize_text(text))
+for text in TEST_CASES:
+    start_time = time.time()
+    s, particles, chunks = normalizer.align_text(text)
+    end_time = time.time()
+    print(particles)
+    print(chunks)
+    print(f"Time taken: {end_time - start_time} seconds")

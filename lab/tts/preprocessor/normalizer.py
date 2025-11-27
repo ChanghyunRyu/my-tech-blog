@@ -2,8 +2,9 @@ import re
 import os
 import hgtk
 from typing import Optional
-from readutils import read_counter_kor, read_only_num, read_num_eng, read_sino_kor, check_latin
-from lexicon import symbols
+from readutils import read_counter_kor, read_only_num, read_num_eng, read_sino_kor
+from readutils import read_sym_kor, read_sym_eng, read_count_sym_kor
+from lexicon import symbols, count_symbols
 
 # Mecab은 필요할 때만 초기화 (lazy initialization)
 _mecab_instance = None
@@ -148,7 +149,7 @@ def trans_num2kor(n: int, prev: Optional[Morph], nxt: Optional[Morph]):
 
     # exception case 구현 파트 --- 아직 미구현
 
-    if check_latin(prev_surface) or check_latin(nxt_surface):
+    if prev_pos.startswith("SL") or nxt_pos.startswith("SL"):
         return read_num_eng(n)
     
     if prev_surface in symbols or nxt_surface in symbols:
@@ -157,13 +158,45 @@ def trans_num2kor(n: int, prev: Optional[Morph], nxt: Optional[Morph]):
     return read_sino_kor(n)
 
 
-def trans_bundle(chunks: list[tuple[str]], chunks_snapshot: list[tuple[str]]):
+def trans_sym2kor(symbol: str, prev: Optional[Morph], nxt: Optional[Morph]):
+    prev_surface = prev[0] if prev is not None else ""
+    prev_pos     = prev[1] if prev is not None else ""
+
+    nxt_surface  = nxt[0]  if nxt  is not None else ""
+    nxt_pos      = nxt[1]  if nxt  is not None else ""
+
+    if symbol in count_symbols:
+        return read_count_sym_kor(symbol)
+    elif not prev_pos.startswith("SF"):
+        if hgtk.checker.is_hangul(prev_surface) or hgtk.checker.is_hangul(nxt_surface):
+            return read_sym_kor(symbol)
+        elif prev_surface.isdigit() or nxt_surface.isdigit():
+            return read_sym_kor(symbol)
+        elif prev_pos.startswith("SL") or nxt_pos.startswith("SL"):
+            return read_sym_eng(symbol)
+        else:
+            return ''
+    else:
+        return ''
+    
+
+def trans_eng2kor(term: str):
+    return 
+
+    
+def trans_bundle(chunks: list[tuple[str]], chunks_snapshot: list[list[Morph]]) -> list[list[str]]:
     for i in range(len(chunks)):
         eojeol = chunks[i]
+
+        prev, nxt = get_context(i, j, chunks_snapshot)
+
         for j in range(len(eojeol)):
             term = eojeol[j]
             if term.isdigit():
-                term = int(term)
-                chunks[i][j] = trans_num2kor(term) 
-            
+                n = int(term)
+                chunks[i][j] = trans_num2kor(n, prev, nxt)
+            elif term in symbols + count_symbols and (i+j > 0):
+                chunks[i][j] = trans_sym2kor(term, prev, nxt)
+            elif chunks_snapshot[i][j][1].startswith("SL"):
+                chunks[i][j] = trans_eng2kor(term)
     return 
