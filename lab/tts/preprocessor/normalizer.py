@@ -4,7 +4,7 @@ from typing import Optional
 from readutils import read_counter_kor, read_only_num, read_num_eng, read_sino_kor
 from readutils import read_sym_kor, read_sym_eng, read_count_sym_kor, load_eng2kor_dict
 from readutils import check_acronym, read_acronym2kor, read_engbymodel
-from lexicon import symbols, count_symbols
+from lexicon import symbols, count_symbols, count_exceptions
 
 
 # Mecab은 필요할 때만 초기화 (lazy initialization)
@@ -148,7 +148,7 @@ def trans_num2kor(n: int, prev: Optional[Morph], nxt: Optional[Morph]):
     nxt_surface  = nxt[0]  if nxt  is not None else ""
     nxt_pos      = nxt[1]  if nxt  is not None else ""
     
-    if nxt is not None and nxt_pos.startswith("NNBC"):
+    if nxt is not None and (nxt_pos.startswith("NNBC") or (nxt_pos.startswith("NNG") and nxt_surface in count_exceptions)):
         return read_counter_kor(n, nxt_surface)
 
     # exception case 구현 파트 --- 아직 미구현
@@ -185,8 +185,8 @@ def trans_sym2kor(symbol: str, prev: Optional[Morph], nxt: Optional[Morph]):
     
 
 def trans_eng2kor(term: str):
-    if term in ENG2KOR_DICT:
-        return ENG2KOR_DICT[term]
+    if term.lower() in ENG2KOR_DICT:
+        return ENG2KOR_DICT[term.lower()]
     
     if check_acronym(term):
         return read_acronym2kor(term)

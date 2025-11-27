@@ -1,3 +1,4 @@
+from collections import UserList
 import string
 import re
 import glob
@@ -37,7 +38,12 @@ def read_sino_kor(n: int) -> str:
             group //= 10
 
             if digit != 0:
-                small_parts.append(_SINO_DIGITS[digit] + _SINO_SMALL_UNITS[pos])
+                # 십, 백, 천 단위에서 1은 "일"을 생략
+                # 예: 10 → "십", 100 → "백", 1000 → "천", 1592 → "천오백구십이"
+                if pos > 0 and digit == 1:
+                    small_parts.append(_SINO_SMALL_UNITS[pos])  # "일" 없이 단위만
+                else:
+                    small_parts.append(_SINO_DIGITS[digit] + _SINO_SMALL_UNITS[pos])
             pos += 1
 
         group_str = "".join(reversed(small_parts))
@@ -143,12 +149,6 @@ def read_count_sym_kor(symbol: str) -> str:
 
 
 def load_base_eng2kor_dict() -> dict[str, str]:
-    """
-    dataset/base_eng2kor_dict.json 파일에서 영어-한글 사전을 로드
-    
-    Returns:
-        dict[str, str]: 영어 단어(소문자)를 한글 표기로 매핑하는 딕셔너리
-    """
     json_path = Path(__file__).parent / 'dataset' / 'base_eng2kor_dict.json'
     
     if not json_path.exists():
@@ -165,11 +165,19 @@ def load_base_eng2kor_dict() -> dict[str, str]:
 
 
 # --- 예외 처리용 user dictionary load 
-def load_user_eng2kor_dict(path: str = 'eng_user_dict.json') -> dict[str, str]:
-    if not os.path.exists(path):
+def load_user_eng2kor_dict() -> dict[str, str]:
+    json_path = Path(__file__).parent / 'dataset' / 'user_eng2kor_dict.json'
+    if not json_path.exists():
+        print(f"경고: {json_path} 파일을 찾을 수 없습니다.")
         return {}
-    with open(path, "r", encoding= "utf-8") as f:
-        return json.load(f)
+    
+    try:
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data_dict = json.load(f)
+        return data_dict
+    except Exception as e:
+        print(f"경고: {json_path} 파일 읽기 실패: {e}")
+        return {}
 
 
 def load_eng2kor_dict() -> dict[str, str]:
@@ -209,18 +217,29 @@ def read_acronym2kor(term: str) -> str:
 # Hugging Face 모델을 위한 전역 변수 (lazy initialization)
 _transliterator_model = None
 _transliterator_tokenizer = None
+_transliterator_device = None  # GPU/CPU 디바이스
 
 
 def read_engbymodel(term: str) -> str:
-    global _transliterator_model, _transliterator_tokenizer
+    global _transliterator_model, _transliterator_tokenizer, _transliterator_device
     
     # 모델이 없으면 로드 (lazy initialization)
     if _transliterator_model is None or _transliterator_tokenizer is None:
         try:
+            import torch
             from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
             
             model_checkpoint = "eunsour/en-ko-transliterator"
-            print(f"영한 변환 모델 로딩 중: {model_checkpoint} (처음 한 번만 로드됩니다)")
+            
+            # GPU 사용 가능 여부 확인
+            if torch.cuda.is_available():
+                _transliterator_device = torch.device("cuda")
+                device_name = torch.cuda.get_device_name(0)
+                print(f"영한 변환 모델 로딩 중: {model_checkpoint}")
+                print(f"  GPU 사용: {device_name}")
+            else:
+                _transliterator_device = torch.device("cpu")
+                print(f"영한 변환 모델 로딩 중: {model_checkpoint} (CPU 모드)")
             
             _transliterator_tokenizer = AutoTokenizer.from_pretrained(
                 model_checkpoint, 
@@ -229,8 +248,13 @@ def read_engbymodel(term: str) -> str:
             )
             _transliterator_model = AutoModelForSeq2SeqLM.from_pretrained(model_checkpoint)
             
+            # 모델을 GPU로 이동 (가능한 경우)
+            _transliterator_model = _transliterator_model.to(_transliterator_device)
+            
             # 모델을 평가 모드로 설정 (드롭아웃 등 비활성화)
             _transliterator_model.eval()
+            
+            print("  모델 로딩 완료")
             
         except ImportError:
             print("경고: transformers 라이브러리가 설치되어 있지 않습니다.")
@@ -242,6 +266,8 @@ def read_engbymodel(term: str) -> str:
     
     # 변환 수행
     try:
+        import torch  # torch.no_grad()를 위해 필요
+        
         # 입력 토크나이징
         encoded_en = _transliterator_tokenizer(
             term, 
@@ -250,12 +276,18 @@ def read_engbymodel(term: str) -> str:
             return_tensors="pt"
         )
         
+        # 입력 텐서를 GPU로 이동 (모델과 같은 디바이스)
+        if _transliterator_device is not None:
+            encoded_en = {k: v.to(_transliterator_device) for k, v in encoded_en.items()}
+        
         # 생성 (추론 모드)
-        generated_tokens = _transliterator_model.generate(
-            **encoded_en,
-            max_new_tokens=48,  # max_length 대신 max_new_tokens 사용
-            num_beams=1,  # 빠른 추론을 위해 beam search 비활성화
-        )
+        with torch.no_grad():  # 그래디언트 계산 비활성화로 메모리 절약 및 속도 향상
+            generated_tokens = _transliterator_model.generate(
+                **encoded_en,
+                max_new_tokens=48,
+                num_beams=1,  # 빠른 추론을 위해 beam search 비활성화
+                do_sample=False,  # 샘플링 비활성화로 속도 향상
+            )
         
         # 디코딩
         result = _transliterator_tokenizer.batch_decode(
