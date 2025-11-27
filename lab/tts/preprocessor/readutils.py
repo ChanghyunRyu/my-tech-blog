@@ -1,6 +1,11 @@
 import string
+import re
+import glob
+import os
+import json
+from pathlib import Path
 from lexicon import _SINO_DIGITS, _SINO_SMALL_UNITS, _SINO_BIG_UNITS, _NATIVE_ONES, _NATIVE_TENS
-from lexicon import ENG_NUM_0, ENG_NUM_TENS, ENG_NUM_TEEN, ENG_NUM_READ_PER_DIGIT
+from lexicon import ENG_NUM_0, ENG_NUM_TENS, ENG_NUM_TEEN, ENG_NUM_READ_PER_DIGIT, ALPHA_READ
 from lexicon import symbols, sym_kor, sym_eng, count_symbols, count_sym_kor
 
 
@@ -135,3 +140,65 @@ def read_sym_eng(symbol: str) -> str:
 
 def read_count_sym_kor(symbol: str) -> str:
     return count_sym_kor[count_symbols.index(symbol)]
+
+
+def load_base_eng2kor_dict() -> dict[str, str]:
+    dataset = []
+    for data_name in glob.glob('transliteration/data/source/*'):
+        with open(data_name, 'r') as f:
+            lines = f.read().splitlines()
+            cleaned = [line.split('\t') for line in lines[3:] if '\t' in line]
+            dataset.extend(cleaned)
+    
+    data_dict = {
+        re.sub(' +', ' ', eng).lower():
+        re.sub(' +', ' ', kor)
+            for eng, kor in dataset
+    }
+    return data_dict
+
+
+# --- 예외 처리용 user dictionary load 
+def load_user_eng2kor_dict(path: str = 'eng_user_dict.json') -> dict[str, str]:
+    if not os.path.exists(path):
+        return {}
+    with open(path, "r", encoding= "utf-8") as f:
+        return json.load(f)
+
+
+def load_eng2kor_dict() -> dict[str, str]:
+    base_dict = load_base_eng2kor_dict()
+    user_dict = load_user_eng2kor_dict()
+
+    base_dict.update(user_dict)
+    return base_dict
+    
+
+VOWELS = set("aeiou")
+
+
+def check_acronym(term: str) -> bool:
+    if len(term) == 1 and term.isupper():
+        return True
+    
+    if all(ch.isupper() for ch in term if ch.isalpha()):
+        return True
+    
+    if all((ch.lower() not in VOWELS) for ch in  term if ch.isalpha()):
+        return True
+    return False
+
+
+def read_acronym2kor(term: str) -> str:
+    result = []
+    for ch in term:
+        if ch.isalpha():
+            idx = ord(ch.lower()) - ord('a')
+            result.append(ALPHA_READ[idx])
+        else:
+            result.append(ch)
+    return ''.join(result)
+
+
+def read_engbymodel(term: str) -> str:
+    return term

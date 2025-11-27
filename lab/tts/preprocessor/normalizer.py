@@ -1,15 +1,16 @@
 import re
-import os
 import hgtk
 from typing import Optional
 from readutils import read_counter_kor, read_only_num, read_num_eng, read_sino_kor
-from readutils import read_sym_kor, read_sym_eng, read_count_sym_kor
+from readutils import read_sym_kor, read_sym_eng, read_count_sym_kor, load_eng2kor_dict
+from readutils import check_acronym, read_acronym2kor, read_engbymodel
 from lexicon import symbols, count_symbols
+
 
 # Mecab은 필요할 때만 초기화 (lazy initialization)
 _mecab_instance = None
-
-Morph = tuple[str, str] 
+Morph = tuple[str, str]
+ENG2KOR_DICT =  load_eng2kor_dict()
 
 
 def check_typos(text: str) -> str:
@@ -111,8 +112,8 @@ def is_sentence_final(pos: str) -> bool:
 
 
 def get_context(i: int, j: int, meta) -> tuple[str | None, str | None]:
-    prev_word = Optional[Morph]
-    next_word = Optional[Morph]
+    prev: Optional[Morph] = None
+    nxt: Optional[Morph] = None
 
     # --- prev ---
     if j > 0:
@@ -181,7 +182,15 @@ def trans_sym2kor(symbol: str, prev: Optional[Morph], nxt: Optional[Morph]):
     
 
 def trans_eng2kor(term: str):
-    return 
+    if term in ENG2KOR_DICT:
+        return ENG2KOR_DICT[term]
+    
+    if check_acronym(term):
+        return read_acronym2kor(term)
+    try:
+        return  read_engbymodel(term)
+    except:
+        return term
 
     
 def trans_bundle(chunks: list[tuple[str]], chunks_snapshot: list[list[Morph]]) -> list[list[str]]:
