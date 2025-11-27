@@ -69,7 +69,9 @@ def _get_counter_reader():
             "헥타르": read_sino_kor,
             "호": read_sino_kor,
             "홉": read_native_kor,
-            "회": read_sino_kor
+            "회": read_sino_kor,
+            '학년': read_sino_kor,
+            '분기': read_sino_kor,
         }
     return _COUNTER_READER
 
@@ -181,3 +183,4 @@ sym_kor = ['골뱅이', '샵', '별표', '괄호열고', '괄호닫고', '더하
 sym_eng = ['앳', '넘버', '스타', '괄호열고', '괄호닫고', '플러스', '대쉬', '세미콜론', '콜론', '슬래쉬', '이퀄스', '앤드', '언더바', '어퍼스트로피', '쌍따옴표']
 count_symbols = ['$', '￦', '￡', '￥', '€', '℃', '%']
 count_sym_kor = ['달러', '원', '파운드', '엔', '유로', '도씨', '퍼센트']
+count_exceptions = ['학년', '분기']

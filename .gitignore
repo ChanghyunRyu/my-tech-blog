@@ -81,6 +81,7 @@ jspm_packages/
 # OS
 .DS_Store
 Thumbs.db
+bash.exe.stackdump
 
 # TTS artifacts
 lab/tts/output/
