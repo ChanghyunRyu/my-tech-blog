@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from lexicon import _SINO_DIGITS, _SINO_SMALL_UNITS, _SINO_BIG_UNITS, _NATIVE_ONES, _NATIVE_TENS
 from lexicon import ENG_NUM_0, ENG_NUM_TENS, ENG_NUM_TEEN, ENG_NUM_READ_PER_DIGIT, ALPHA_READ
-from lexicon import symbols, sym_kor, sym_eng, count_symbols, count_sym_kor
+from lexicon import symbols, sym_kor, sym_eng, count_symbols, count_sym_kor, ENGLISH_CONTRACTIONS
 
 
 def read_sino_kor(n: int) -> str:
@@ -316,3 +316,80 @@ def read_engbymodel(term: str) -> str:
     except Exception as e:
         print(f"경고: 변환 실패 ({term}): {e}")
         return term
+
+
+# --- Prior to morphological analysis, pre-correction of exception cases
+def correction_exception(text: str) -> str:
+    result = text
+    
+    # 1. 숫자 사이의 쉼표만 제거 (lookbehind와 lookahead 사용)
+    # (?<=\d) : 앞이 숫자
+    # , : 쉼표
+    # (?=\d) : 뒤가 숫자 (공백 없이)
+    # 이렇게 하면 "3,200"은 "3200"이 되고, "2, 100"은 그대로 유지됨
+    result = re.sub(r'(?<=\d),(?=\d)', '', result)
+    
+    # 2. 시간 형식 변환 (예: "09:10" → "9시 10분")
+    # 전반부: 0~24까지의 숫자 (앞에 0이 붙을 수도 안 붙을 수도 있음)
+    # 후반부: 0~60까지의 숫자 (항상 2자리)
+    # 후반부 뒤에 다른 글자가 없어야 함 (공백은 허용, "09:10:12" 같은 건 안됨)
+    def time_replacer(match):
+        hour_str = match.group(1)
+        minute_str = match.group(2)
+        
+        hour = int(hour_str)
+        minute = int(minute_str)
+        
+        # 한글로 변환
+        hour_kor = read_sino_kor(hour) if hour > 0 else "영"
+        minute_kor = read_sino_kor(minute) if minute > 0 else "영"
+        
+        return f"{hour_kor}시 {minute_kor}분"
+    result = re.sub(
+        r'\b(0?[0-9]|1[0-9]|2[0-4]):([0-5][0-9]|60)(?!\S,)',
+        time_replacer,
+        result
+    )
+    
+    # 3. 날짜 형식 변환 (예: "1996.6.15." → "1996년 6월 15일")
+    # 전반부: 4자리 숫자 (연도)
+    # 중반부: 1~12의 숫자 (앞에 0이 붙을 수도 안 붙을 수도 있음)
+    # 후반부: 1~31까지의 숫자 (앞에 0이 붙을 수도 안 붙을 수도 있음)
+    # 후반부 뒤에 다른 글자가 없어야 함 (공백은 허용)
+    def date_replacer(match):
+        year_str = match.group(1)
+        month_str = match.group(2)
+        day_str = match.group(3)
+        
+        year = int(year_str)
+        month = int(month_str)
+        day = int(day_str)
+        
+        # 한글로 변환
+        year_kor = read_sino_kor(year)
+        month_kor = read_sino_kor(month)
+        day_kor = read_sino_kor(day)
+        
+        return f"{year_kor}년 {month_kor}월 {day_kor}일"
+    result = re.sub(
+        r'\b([0-9]{4})\.(0?[1-9]|1[0-2])\.(0?[1-9]|[12][0-9]|3[01])\.(?!\S)',
+        date_replacer,
+        result
+    )
+    
+    # 4. 영어 줄임말 처리 (예: "don't" → 형태소 분석 시 분리되지 않도록 처리)
+    # 줄임말 내부의 '를 언더스코어로 치환하여 형태소 분석기가 하나의 단어로 인식하도록 함
+    # 형태소 분석 후에는 다시 복원되어야 하지만, 여기서는 선가공만 수행
+    def replace_contraction(match):
+        contraction = match.group(0)
+        # '를 언더스코어로 치환 (형태소 분석기가 하나의 단어로 인식하도록)
+        # 예: "don't" → "don_t"
+        contraction_protected = contraction.replace("'", "_")
+        return contraction_protected
+    
+    # 줄임말 패턴: 단어 경계 사이의 줄임말 (대소문자 구분)
+    # 영어 알파벳과 '로 구성된 줄임말을 찾음
+    contraction_pattern = r'\b(' + '|'.join(re.escape(cont) for cont in ENGLISH_CONTRACTIONS.keys()) + r')\b'
+    result = re.sub(contraction_pattern, replace_contraction, result, flags=re.IGNORECASE)
+    
+    return result
