@@ -3,7 +3,7 @@ import hgtk
 from typing import Optional
 from readutils import read_counter_kor, read_only_num, read_num_eng, read_sino_kor
 from readutils import read_sym_kor, read_sym_eng, read_count_sym_kor, load_eng2kor_dict
-from readutils import check_acronym, read_acronym2kor, read_engbymodel
+from readutils import check_acronym, read_acronym2kor, read_engbymodel, correction_exception
 from lexicon import symbols, count_symbols, count_exceptions
 
 
@@ -16,68 +16,6 @@ particles_final = ['은', '이', '과', '을']
 particles_not_final = ['는', '가', '와', '를']
 
 excetion_case = ['.']
-
-
-# --- Prior to morphological analysis, pre-correction of exception cases
-def correction_exception(text: str) -> str:
-    result = text
-    
-    # 1. 숫자 사이의 쉼표만 제거 (lookbehind와 lookahead 사용)
-    # (?<=\d) : 앞이 숫자
-    # , : 쉼표
-    # (?=\d) : 뒤가 숫자 (공백 없이)
-    # 이렇게 하면 "3,200"은 "3200"이 되고, "2, 100"은 그대로 유지됨
-    result = re.sub(r'(?<=\d),(?=\d)', '', result)
-    
-    # 2. 시간 형식 변환 (예: "09:10" → "9시 10분")
-    # 전반부: 0~24까지의 숫자 (앞에 0이 붙을 수도 안 붙을 수도 있음)
-    # 후반부: 0~60까지의 숫자 (항상 2자리)
-    # 후반부 뒤에 다른 글자가 없어야 함 (공백은 허용, "09:10:12" 같은 건 안됨)
-    def time_replacer(match):
-        hour_str = match.group(1)
-        minute_str = match.group(2)
-        
-        hour = int(hour_str)
-        minute = int(minute_str)
-        
-        # 한글로 변환
-        hour_kor = read_sino_kor(hour) if hour > 0 else "영"
-        minute_kor = read_sino_kor(minute) if minute > 0 else "영"
-        
-        return f"{hour_kor}시 {minute_kor}분"
-    result = re.sub(
-        r'\b(0?[0-9]|1[0-9]|2[0-4]):([0-5][0-9]|60)(?!\S,)',
-        time_replacer,
-        result
-    )
-    
-    # 3. 날짜 형식 변환 (예: "1996.6.15." → "1996년 6월 15일")
-    # 전반부: 4자리 숫자 (연도)
-    # 중반부: 1~12의 숫자 (앞에 0이 붙을 수도 안 붙을 수도 있음)
-    # 후반부: 1~31까지의 숫자 (앞에 0이 붙을 수도 안 붙을 수도 있음)
-    # 후반부 뒤에 다른 글자가 없어야 함 (공백은 허용)
-    def date_replacer(match):
-        year_str = match.group(1)
-        month_str = match.group(2)
-        day_str = match.group(3)
-        
-        year = int(year_str)
-        month = int(month_str)
-        day = int(day_str)
-        
-        # 한글로 변환
-        year_kor = read_sino_kor(year)
-        month_kor = read_sino_kor(month)
-        day_kor = read_sino_kor(day)
-        
-        return f"{year_kor}년 {month_kor}월 {day_kor}일"
-    result = re.sub(
-        r'\b([0-9]{4})\.(0?[1-9]|1[0-2])\.(0?[1-9]|[12][0-9]|3[01])\.(?!\S)',
-        date_replacer,
-        result
-    )
-    
-    return result
 
 
 def check_typos(text: str) -> str:

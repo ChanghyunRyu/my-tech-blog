@@ -88,3 +88,16 @@ english:e -> korean:이
 original:오늘 학습률은 lr=1e-5 로 설정합니다.
 normalized:오늘 학습률은 엘알는원이다시오 로 설정합니다
 Time taken: 0.0009622573852539062 seconds
+
+
+### 영어는 도중에 '가 들어가는 경우가 있다!
+
+don't, I'm 등 줄임말에 '를 넣는 경우가 있으니 이것도 예외처리 케이스에 넣어줘야겠네요. 현재 영어 로직으로는 처리하기 어려울 수 있을 거 같아요.
+
+english:don -> korean:돈
+english:t -> korean:톤
+english:overthink -> korean:오버띵크
+english:it -> korean:잇
+original:친구가 갑자기 “don’t overthink it”이라고 해줬어요.
+normalized:친구가 갑자기 돈톤 오버띵크 잇이라고 해줬어요 .
+Time taken: 0.44948697090148926 seconds
