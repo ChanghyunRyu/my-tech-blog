@@ -165,19 +165,33 @@ def load_base_eng2kor_dict() -> dict[str, str]:
 
 
 # --- 예외 처리용 user dictionary load 
+# base_eng2kor_dict.json을 제외한 dataset 폴더의 모든 .json 파일을 로드
 def load_user_eng2kor_dict() -> dict[str, str]:
-    json_path = Path(__file__).parent / 'dataset' / 'user_eng2kor_dict.json'
-    if not json_path.exists():
-        print(f"경고: {json_path} 파일을 찾을 수 없습니다.")
+    dataset_dir = Path(__file__).parent / 'dataset'
+    
+    if not dataset_dir.exists():
+        print(f"경고: {dataset_dir} 디렉토리를 찾을 수 없습니다.")
         return {}
     
-    try:
-        with open(json_path, 'r', encoding='utf-8') as f:
-            data_dict = json.load(f)
-        return data_dict
-    except Exception as e:
-        print(f"경고: {json_path} 파일 읽기 실패: {e}")
-        return {}
+    merged_dict = {}
+    
+    # dataset 폴더의 모든 .json 파일 찾기
+    json_files = list(dataset_dir.glob('*.json'))
+    
+    for json_path in json_files:
+        # base_eng2kor_dict.json은 제외
+        if json_path.name == 'base_eng2kor_dict.json':
+            continue
+        
+        try:
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data_dict = json.load(f)
+                merged_dict.update(data_dict)
+        except Exception as e:
+            print(f"경고: {json_path} 파일 읽기 실패: {e}")
+            continue
+    
+    return merged_dict
 
 
 def load_eng2kor_dict() -> dict[str, str]:
