@@ -12,8 +12,46 @@ _mecab_instance = None
 Morph = tuple[str, str]
 ENG2KOR_DICT =  load_eng2kor_dict()
 
-particles_final = ['은', '이', '과', '을', '이다']
-particles_not_final = ['는', '가', '와', '를', '다']
+particles_final = ['은', '이', '과', '을']
+particles_not_final = ['는', '가', '와', '를']
+
+excetion_case = ['.']
+
+
+# --- Prior to morphological analysis, pre-correction of exception cases
+def correction_exception(text: str) -> str:
+    result = text
+    
+    # 1. 숫자 사이의 쉼표만 제거 (lookbehind와 lookahead 사용)
+    # (?<=\d) : 앞이 숫자
+    # , : 쉼표
+    # (?=\d) : 뒤가 숫자 (공백 없이)
+    # 이렇게 하면 "3,200"은 "3200"이 되고, "2, 100"은 그대로 유지됨
+    result = re.sub(r'(?<=\d),(?=\d)', '', result)
+    
+    # 2. 시간 형식 변환 (예: "09:10" → "9시 10분")
+    # 전반부: 0~24까지의 숫자 (앞에 0이 붙을 수도 안 붙을 수도 있음)
+    # 후반부: 0~60까지의 숫자 (항상 2자리)
+    # 후반부 뒤에 다른 글자가 없어야 함 (공백은 허용, "09:10:12" 같은 건 안됨)
+    def time_replacer(match):
+        hour_str = match.group(1)
+        minute_str = match.group(2)
+        
+        hour = int(hour_str)
+        minute = int(minute_str)
+        
+        # 한글로 변환
+        hour_kor = read_sino_kor(hour) if hour > 0 else "영"
+        minute_kor = read_sino_kor(minute) if minute > 0 else "영"
+        
+        return f"{hour_kor}시 {minute_kor}분"
+    result = re.sub(
+        r'\b(0?[0-9]|1[0-9]|2[0-4]):([0-5][0-9]|60)(?!\S,)',
+        time_replacer,
+        result
+    )
+    
+    return result
 
 
 def check_typos(text: str) -> str:
@@ -137,6 +175,9 @@ def get_context(i: int, j: int, meta) -> tuple[str | None, str | None]:
     return prev, nxt
 
 
+DECIMAL_LIKE_SYMBOLS = {'.'}
+
+
 def trans_num2kor(n: int, prev: Optional[Morph], nxt: Optional[Morph]):
     """
     숫자 n을 한글 표기로 바꾸는 래퍼.
@@ -147,14 +188,18 @@ def trans_num2kor(n: int, prev: Optional[Morph], nxt: Optional[Morph]):
 
     nxt_surface  = nxt[0]  if nxt  is not None else ""
     nxt_pos      = nxt[1]  if nxt  is not None else ""
+
+    # --- exception case 구현 파트 ---
+    # 0. 소수/버전/하위번호: 앞이 '.'이면 자리수 읽기
+    if prev_surface in DECIMAL_LIKE_SYMBOLS:
+        return read_only_num(n)
     
     if nxt is not None and (nxt_pos.startswith("NNBC") or (nxt_pos.startswith("NNG") and nxt_surface in count_exceptions)):
         return read_counter_kor(n, nxt_surface)
 
-    # exception case 구현 파트 --- 아직 미구현
-
-    if prev_pos.startswith("SL") or nxt_pos.startswith("SL"):
-        return read_num_eng(n)
+    # 일단 비활성화: Code-mixed 상황에서 숫자를 영어로 읽어야만 하는 케이스가 정확히 파악이 안 됨
+    # if prev_pos.startswith("SL") or nxt_pos.startswith("SL"):
+    #    return read_num_eng(n)
     
     if prev_surface in symbols or nxt_surface in symbols:
         return read_only_num(n)
@@ -195,36 +240,6 @@ def trans_eng2kor(term: str):
     except:
         return term
 
-    
-def trans_bundle(chunks: list[tuple[str]], chunks_snapshot: list[list[Morph]]) -> list[list[str]]:
-    for i in range(len(chunks)):
-        eojeol = chunks[i]
-
-        for j in range(len(eojeol)):
-            term = eojeol[j]
-            prev, nxt = get_context(i, j, chunks_snapshot)
-            # --- number ---
-            if term.isdigit():
-                n = int(term)
-                chunks[i][j] = trans_num2kor(n, prev, nxt)
-            # --- symbol ---
-            elif term in symbols + count_symbols and (i+j > 0):
-                chunks[i][j] = trans_sym2kor(term, prev, nxt)
-            # --- english ---
-            elif chunks_snapshot[i][j][1].startswith("SL"):
-                chunks[i][j] = trans_eng2kor(term)
-                print('english:{} -> korean:{}'.format(term, chunks[i][j]))
-            # --- hangul ---
-            elif hgtk.checker.is_hangul(term):
-                if chunks_snapshot[i][j][1].startswith("JX") and (term in particles_final or term in particles_not_final):
-                    chunks[i][j] = correction_particle(prev, term)
-                else:
-                    chunks[i][j] = term
-            else:
-                # --- exception case ---
-                chunks[i][j] = ''
-    return chunks
-
 
 def correction_particle(prev: str, term: str) -> str:
     if not prev:
@@ -247,13 +262,82 @@ def correction_particle(prev: str, term: str) -> str:
     return term
 
 
-def trans_sentence(sentence: str) -> str:
+# --- exception case --- If it gets too complicated, change the regular case later.
+def handle_exception_case(term: str, prev: Optional[Morph], nxt: Optional[Morph]) -> str:
+    prev_surface = prev[0] if prev is not None else ""
+    prev_pos     = prev[1] if prev is not None else ""
+
+    nxt_surface  = nxt[0]  if nxt  is not None else ""
+    nxt_pos      = nxt[1]  if nxt  is not None else ""
+
+    if term == '.':
+        if prev_surface.isdigit() or nxt_surface.isdigit():
+            return "점"
+        else:
+            return ''
+
+    
+def trans_bundle(chunks: list[tuple[str]], chunks_snapshot: list[list[Morph]]
+, if_sym: bool) -> list[list[str]]:
+    for i in range(len(chunks)):
+        eojeol = chunks[i]
+
+        for j in range(len(eojeol)):
+            term = eojeol[j]
+            prev, nxt = get_context(i, j, chunks_snapshot)
+            # --- number ---
+            # isdecimal()을 사용하여 일반 숫자(0-9)만 처리
+            # 위첨자(³, ², ¹) 등은 isdigit()이 True지만 int()로 변환 불가
+            if term.isdecimal():
+                try:
+                    n = int(term)
+                    chunks[i][j] = trans_num2kor(n, prev, nxt)
+                except ValueError:
+                    # 변환 실패 시 원본 유지
+                    chunks[i][j] = term
+            # --- symbol ---
+            elif if_sym and term in symbols + count_symbols and (i+j > 0):
+                chunks[i][j] = trans_sym2kor(term, prev, nxt)
+            # --- english ---
+            elif chunks_snapshot[i][j][1].startswith("SL"):
+                chunks[i][j] = trans_eng2kor(term)
+                print('english:{} -> korean:{}'.format(term, chunks[i][j]))
+            # --- hangul ---
+            elif hgtk.checker.is_hangul(term):
+                if chunks_snapshot[i][j][1].startswith("JX") and (term in particles_final or term in particles_not_final):
+                    chunks[i][j] = correction_particle(prev, term)
+                else:
+                    chunks[i][j] = term
+            elif term in excetion_case:
+                chunks[i][j] = handle_exception_case(term, prev, nxt)
+            else:
+                # --- exception case ---
+                chunks[i][j] = ''
+    return chunks
+
+
+def trans_sentence(sentence: str, if_sym: bool = False) -> str:
+    # 1. 오탈자 제거
     sentence = check_typos(sentence)
+
+    # 2. 예외 처리 및 선가공 (형태소 분석 전에 수행)
+    sentence = correction_exception(sentence)
+    
+    # 3. 문장 끝 구두점 분리 및 저장
+    sentence_end_punct = None
+    if sentence and sentence[-1] in '.?!。？！':
+        sentence_end_punct = sentence[-1]
+        sentence = sentence[:-1].rstrip()  # 구두점 제거 및 뒤 공백 정리
+    
     if hgtk.checker.is_hangul(sentence):
-        return sentence
+        # 한글만 있는 경우에도 구두점 다시 붙이기
+        return sentence + (sentence_end_punct if sentence_end_punct else '')
     
     _, _, chunks_snapshot = align_text(sentence)
     chunks = [[m[0] for m in eojeol] for eojeol in chunks_snapshot]
-    chunks = trans_bundle(chunks, chunks_snapshot)
+    chunks = trans_bundle(chunks, chunks_snapshot, if_sym)
     chunks = [''.join(e) for e in chunks]
-    return ' '.join(chunks)
+    if sentence_end_punct is not None:
+        chunks.append(sentence_end_punct)
+    result = ' '.join(chunks)
+    return result
