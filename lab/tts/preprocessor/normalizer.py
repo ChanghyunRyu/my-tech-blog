@@ -51,6 +51,32 @@ def correction_exception(text: str) -> str:
         result
     )
     
+    # 3. 날짜 형식 변환 (예: "1996.6.15." → "1996년 6월 15일")
+    # 전반부: 4자리 숫자 (연도)
+    # 중반부: 1~12의 숫자 (앞에 0이 붙을 수도 안 붙을 수도 있음)
+    # 후반부: 1~31까지의 숫자 (앞에 0이 붙을 수도 안 붙을 수도 있음)
+    # 후반부 뒤에 다른 글자가 없어야 함 (공백은 허용)
+    def date_replacer(match):
+        year_str = match.group(1)
+        month_str = match.group(2)
+        day_str = match.group(3)
+        
+        year = int(year_str)
+        month = int(month_str)
+        day = int(day_str)
+        
+        # 한글로 변환
+        year_kor = read_sino_kor(year)
+        month_kor = read_sino_kor(month)
+        day_kor = read_sino_kor(day)
+        
+        return f"{year_kor}년 {month_kor}월 {day_kor}일"
+    result = re.sub(
+        r'\b([0-9]{4})\.(0?[1-9]|1[0-2])\.(0?[1-9]|[12][0-9]|3[01])\.(?!\S)',
+        date_replacer,
+        result
+    )
+    
     return result
 
 
