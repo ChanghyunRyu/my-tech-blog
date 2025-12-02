@@ -228,91 +228,48 @@ def read_acronym2kor(term: str) -> str:
     return ''.join(result)
 
 
-# Hugging Face 모델을 위한 전역 변수 (lazy initialization)
-_transliterator_model = None
-_transliterator_tokenizer = None
-_transliterator_device = None  # GPU/CPU 디바이스
+# 영한 음차 변환 파이프라인 (lazy initialization)
+_transliterator_pipeline = None
 
 
 def read_engbymodel(term: str) -> str:
-    global _transliterator_model, _transliterator_tokenizer, _transliterator_device
+    """
+    영어 단어를 한글 음차로 변환합니다.
+    ARPABET 파이프라인 사용: 영어 → G2P → ARPABET → ByT5 → 한글
+    """
+    global _transliterator_pipeline
     
-    # 모델이 없으면 로드 (lazy initialization)
-    if _transliterator_model is None or _transliterator_tokenizer is None:
+    # 파이프라인이 없으면 로드 (lazy initialization)
+    if _transliterator_pipeline is None:
         try:
-            import torch
-            from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+            from inference_arpabet_pipeline import Eng2KorTransliteratorPipeline
+            from pathlib import Path
             
-            model_checkpoint = "eunsour/en-ko-transliterator"
+            # 모델 경로 설정 (readutils.py 기준 상대 경로)
+            model_path = Path(__file__).parent / "train" / "models" / "byt5-arpabet2kor"
             
-            # GPU 사용 가능 여부 확인
-            if torch.cuda.is_available():
-                _transliterator_device = torch.device("cuda")
-                device_name = torch.cuda.get_device_name(0)
-                print(f"영한 변환 모델 로딩 중: {model_checkpoint}")
-                print(f"  GPU 사용: {device_name}")
-            else:
-                _transliterator_device = torch.device("cpu")
-                print(f"영한 변환 모델 로딩 중: {model_checkpoint} (CPU 모드)")
+            if not model_path.exists():
+                print(f"경고: 모델을 찾을 수 없습니다: {model_path}")
+                return term
             
-            _transliterator_tokenizer = AutoTokenizer.from_pretrained(
-                model_checkpoint, 
-                src_lang="en", 
-                tgt_lang="ko"
+            print(f"영한 음차 변환 파이프라인 로딩 중...")
+            _transliterator_pipeline = Eng2KorTransliteratorPipeline(
+                model_path=str(model_path),
+                use_compound_split=True
             )
-            _transliterator_model = AutoModelForSeq2SeqLM.from_pretrained(model_checkpoint)
             
-            # 모델을 GPU로 이동 (가능한 경우)
-            _transliterator_model = _transliterator_model.to(_transliterator_device)
-            
-            # 모델을 평가 모드로 설정 (드롭아웃 등 비활성화)
-            _transliterator_model.eval()
-            
-            print("  모델 로딩 완료")
-            
-        except ImportError:
-            print("경고: transformers 라이브러리가 설치되어 있지 않습니다.")
-            print("      설치: pip install transformers torch")
+        except ImportError as e:
+            print(f"경고: 필요한 라이브러리가 설치되어 있지 않습니다: {e}")
+            print("      설치: pip install transformers torch g2p-en wordninja")
             return term
         except Exception as e:
-            print(f"경고: 모델 로딩 실패: {e}")
+            print(f"경고: 파이프라인 로딩 실패: {e}")
             return term
     
     # 변환 수행
     try:
-        import torch  # torch.no_grad()를 위해 필요
-        
-        # 입력 토크나이징
-        encoded_en = _transliterator_tokenizer(
-            term, 
-            truncation=True, 
-            max_length=48, 
-            return_tensors="pt"
-        )
-        
-        # 입력 텐서를 GPU로 이동 (모델과 같은 디바이스)
-        if _transliterator_device is not None:
-            encoded_en = {k: v.to(_transliterator_device) for k, v in encoded_en.items()}
-        
-        # 생성 (추론 모드)
-        with torch.no_grad():  # 그래디언트 계산 비활성화로 메모리 절약 및 속도 향상
-            generated_tokens = _transliterator_model.generate(
-                **encoded_en,
-                max_new_tokens=48,
-                num_beams=1,  # 빠른 추론을 위해 beam search 비활성화
-                do_sample=False,  # 샘플링 비활성화로 속도 향상
-            )
-        
-        # 디코딩
-        result = _transliterator_tokenizer.batch_decode(
-            generated_tokens, 
-            skip_special_tokens=True
-        )
-        
-        if result and len(result) > 0:
-            return result[0].strip()
-        else:
-            return term
+        result = _transliterator_pipeline.transliterate(term)
+        return result if result else term
     except Exception as e:
         print(f"경고: 변환 실패 ({term}): {e}")
         return term
