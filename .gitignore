@@ -95,3 +95,6 @@ lab/tts/xtts-v2/metadata_train.csv
 lab/tts/chatterBox/.venv-chatterbox/
 lab/tts/chatterBox/output/
 lab/tts/preprocessor/__pycache__/
+lab/tts/preprocessor/train/checkpoints/
+lab/tts/preprocessor/train/checkpoints_arpabet/
+lab/tts/preprocessor/train/models

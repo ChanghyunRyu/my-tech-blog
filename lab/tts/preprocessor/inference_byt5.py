@@ -12,7 +12,7 @@ from transformers import AutoTokenizer, T5ForConditionalGeneration
 class Eng2KorTransliterator:
     """영어-한글 음차 변환기"""
     
-    def __init__(self, model_path: str = "./models/byt5-eng2kor", device: str = None):
+    def __init__(self, model_path: str = "./train/models/byt5-eng2kor", device: str = None):
         """
         Args:
             model_path: 학습된 모델 경로

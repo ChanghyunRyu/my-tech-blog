@@ -16,7 +16,7 @@ class Eng2KorTransliteratorPipeline:
     
     def __init__(
         self, 
-        model_path: str = "./models/byt5-arpabet2kor",
+        model_path: str = "./train/models/byt5-arpabet2kor",
         device: str = None,
         use_compound_split: bool = True
     ):
