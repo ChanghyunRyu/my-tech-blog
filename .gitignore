@@ -97,4 +97,5 @@ lab/tts/chatterBox/output/
 lab/tts/preprocessor/__pycache__/
 lab/tts/preprocessor/train/checkpoints/
 lab/tts/preprocessor/train/checkpoints_arpabet/
+lab/tts/preprocessor/train/checkpoints_small/
 lab/tts/preprocessor/train/models
