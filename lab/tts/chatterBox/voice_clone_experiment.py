@@ -11,7 +11,7 @@ from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 AUDIO_PROMPT_PATH = "../dataset/wavs/karina-tts-voice-cloning.wav"
 
 # 합성할 텍스트
-TEXT = "CPSP는 빅토리아급 4척을 대체할 3000톤급 잠수함 12척을 도입하는 대규모 프로젝트로, 캐나다가 K-조선을 유력 후보군에 올려놓고 기술·산업성을 전방위로 따져보고 있음을 보여준다."
+TEXT = "일대 삼 점 일영육 비율은 황금 비율이 아니다."
 
 # 언어 ID (예: 한국어: \"ko\", 영어: \"en\", 일본어: \"ja\" 등)
 LANGUAGE_ID = "ko"
@@ -35,9 +35,9 @@ class GenerateConfig:
 
 # 여기 값만 바꿔 가면서 실험하면 됩니다.
 GEN_CFG = GenerateConfig(
-    exaggeration=0.5,
-    cfg_weight=0.95,
-    temperature=0.8,
+    exaggeration=0.6,
+    cfg_weight=0.8,
+    temperature=0.7,
     repetition_penalty=5.0,
     min_p=0.1,
     top_p=0.9,
