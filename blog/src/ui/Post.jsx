@@ -5,23 +5,62 @@ import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
 import posts from '../posts.js'
 
-// markdown-it 설정: 코드 블록에 구문 강조 적용
-const md = new MarkdownIt({
-  html: true,
-  linkify: true,
-  typographer: true,
-  breaks: false, // 줄바꿈을 <br>로 변환하지 않음
-  highlight: function (str, lang) {
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        return '<pre class="hljs"><code>' +
-               hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
-               '</code></pre>';
-      } catch (__) {}
-    }
-    return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
+// HTML 이스케이프 헬퍼 함수
+const escapeHtml = (str) => {
+  if (typeof str !== 'string') {
+    str = String(str || '');
   }
-})
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return str.replace(/[&<>"']/g, (m) => map[m]);
+};
+
+// markdown-it 인스턴스 생성 (컴포넌트 외부에서 한 번만 생성)
+const createMarkdownRenderer = () => {
+  const md = new MarkdownIt({
+    html: true,
+    linkify: true,
+    typographer: true,
+    breaks: false, // 줄바꿈을 <br>로 변환하지 않음
+    highlight: function (str, lang) {
+      // 입력 검증
+      if (str == null) {
+        return '<pre class="hljs"><code></code></pre>';
+      }
+      
+      if (typeof str !== 'string') {
+        str = String(str);
+      }
+      
+      // 언어가 지정되고 highlight.js가 지원하는 경우
+      if (lang && typeof lang === 'string' && hljs.getLanguage(lang)) {
+        try {
+          const highlighted = hljs.highlight(str, { 
+            language: lang, 
+            ignoreIllegals: true 
+          }).value;
+          return '<pre class="hljs"><code class="language-' + escapeHtml(lang) + '">' + highlighted + '</code></pre>';
+        } catch (err) {
+          console.warn('Highlight error for language', lang, ':', err);
+          // 에러 발생 시 이스케이프된 텍스트 반환
+          return '<pre class="hljs"><code>' + escapeHtml(str) + '</code></pre>';
+        }
+      }
+      
+      // 언어가 없거나 인식하지 못한 경우 - 이스케이프만 수행
+      return '<pre class="hljs"><code>' + escapeHtml(str) + '</code></pre>';
+    }
+  });
+  
+  return md;
+};
+
+const md = createMarkdownRenderer();
 
 export default function Post() {
   const { slug } = useParams()
@@ -30,15 +69,22 @@ export default function Post() {
 
   useEffect(() => {
     async function load() {
-      if (!meta) return
+      if (!meta) {
+        setHtml('<p>Post metadata not found.</p>')
+        return
+      }
       
       try {
         const folder = meta.folder || 'tech-blog-review'
+        // BASE_URL은 이미 /my-tech-blog/를 포함하므로 posts/로 시작
         const url = `${import.meta.env.BASE_URL}posts/${folder}/${slug}.md`
+        
+        console.log('Fetching post from:', url)
+        
         const res = await fetch(url)
         
         if (!res.ok) {
-          throw new Error(`Failed to fetch: ${res.status} ${res.statusText}. URL: ${url}`)
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`)
         }
         
         let text = await res.text()
@@ -48,18 +94,59 @@ export default function Post() {
           text = String(text || '')
         }
         
+        // 빈 문자열 체크
+        if (!text || text.trim().length === 0) {
+          throw new Error('Post content is empty')
+        }
+        
         // ~~~ 코드 블록을 ```로 변환 (일부 마크다운에서 사용하는 문법)
-        text = text.replace(/^~~~(\w*)\n/gm, '```$1\n')
-        text = text.replace(/^~~~$/gm, '```')
+        // 더 안전한 정규식 사용 - replace 호출 전에 문자열 확인
+        if (typeof text === 'string' && text.replace) {
+          text = text.replace(/^~~~(\w*)\r?\n/gm, '```$1\n')
+          text = text.replace(/^~~~\s*$/gm, '```')
+        } else {
+          // replace가 없는 경우 (이론적으로 발생하지 않아야 하지만 안전장치)
+          console.warn('Text is not a valid string for replace operation')
+          text = String(text)
+        }
         
         // markdown-it으로 파싱
-        const html = md.render(text)
-        setHtml(html)
+        try {
+          // 최종 검증: text가 유효한 문자열인지 확인
+          if (typeof text !== 'string') {
+            throw new Error(`Invalid text type: ${typeof text}. Expected string.`)
+          }
+          
+          if (!text || text.length === 0) {
+            throw new Error('Text is empty after processing')
+          }
+          
+          // markdown-it 렌더링
+          const html = md.render(text)
+          
+          if (!html || typeof html !== 'string') {
+            throw new Error(`Markdown rendering returned invalid result: ${typeof html}`)
+          }
+          
+          setHtml(html)
+        } catch (renderError) {
+          console.error('Markdown rendering error:', renderError)
+          console.error('Text type:', typeof text)
+          console.error('Text length:', text?.length)
+          console.error('Text preview:', text?.substring(0, 100))
+          throw new Error(`Markdown parsing failed: ${renderError.message}`)
+        }
       } catch (e) {
         console.error('Error loading post:', e)
-        setHtml(`<p>Post not found. Error: ${e.message}</p>`)
+        const errorMessage = e instanceof Error ? e.message : String(e)
+        setHtml(`<div style="padding: 20px; border: 1px solid #dc2626; border-radius: 6px; background-color: #fef2f2;">
+          <p style="color: #dc2626; font-weight: 600; margin: 0 0 8px 0;">Post not found</p>
+          <p style="color: #991b1b; margin: 0; font-size: 14px;">Error: ${errorMessage}</p>
+          <p style="color: #991b1b; margin: 8px 0 0 0; font-size: 12px;">Please check the browser console for more details.</p>
+        </div>`)
       }
     }
+    
     load()
   }, [slug, meta])
 
