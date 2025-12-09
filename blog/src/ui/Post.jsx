@@ -15,8 +15,12 @@ renderer.code = (code, language) => {
 
 marked.setOptions({
   renderer,
-  breaks: true, // 줄바꿈을 <br>로 변환
+  breaks: false, // 줄바꿈을 <br>로 변환하지 않음 (강조 문법과 충돌 방지)
   gfm: true, // GitHub Flavored Markdown 활성화
+  pedantic: false,
+  sanitize: false,
+  smartLists: true,
+  smartypants: false,
 })
 
 export default function Post() {
@@ -26,18 +30,30 @@ export default function Post() {
 
   useEffect(() => {
     async function load() {
+      if (!meta) return
+      
       try {
-        const folder = meta?.folder || 'tech-blog-review'
-        const res = await fetch(`${import.meta.env.BASE_URL}posts/${folder}/${slug}.md`)
-        const text = await res.text()
+        const folder = meta.folder || 'tech-blog-review'
+        const url = `${import.meta.env.BASE_URL}posts/${folder}/${slug}.md`
+        const res = await fetch(url)
+        
+        if (!res.ok) {
+          throw new Error(`Failed to fetch: ${res.status} ${res.statusText}. URL: ${url}`)
+        }
+        
+        let text = await res.text()
+        
+        // ~~~ 코드 블록을 ```로 변환 (일부 마크다운에서 사용하는 문법)
+        text = text.replace(/^~~~(\w*)\n/gm, '```$1\n')
+        text = text.replace(/^~~~$/gm, '```')
+        
         setHtml(marked.parse(text))
       } catch (e) {
-        setHtml('<p>Post not found.</p>')
+        console.error('Error loading post:', e)
+        setHtml(`<p>Post not found. Error: ${e.message}</p>`)
       }
     }
-    if (meta) {
-      load()
-    }
+    load()
   }, [slug, meta])
 
   if (!meta) return <p>Post not found.</p>
@@ -167,6 +183,12 @@ export default function Post() {
         }
         .markdown-body table tr:nth-child(2n) {
           background-color: #f6f8fa;
+        }
+        .markdown-body strong {
+          font-weight: 600;
+        }
+        .markdown-body em {
+          font-style: italic;
         }
       `}</style>
     </article>
