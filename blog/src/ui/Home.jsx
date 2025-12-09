@@ -33,16 +33,18 @@ export default function Home() {
 
   const getCategoryLabel = (category) => {
     switch (category) {
-      case 'daily': return '기술 블로그'
-      case 'weekly': return 'IT 서적'
+      case 'it-books': return 'IT Books'
+      case 'tech-blog-review': return 'Tech Blog Review'
+      case 'lab-research': return 'Lab & Research'
       default: return '전체'
     }
   }
 
   const getCategoryColor = (category) => {
     switch (category) {
-      case 'daily': return '#2563eb'
-      case 'weekly': return '#dc2626'
+      case 'it-books': return '#dc2626'
+      case 'tech-blog-review': return '#2563eb'
+      case 'lab-research': return '#16a34a'
       default: return '#666'
     }
   }
@@ -50,14 +52,14 @@ export default function Home() {
   return (
     <div>
       <section style={{ marginBottom: 24 }}>
-        <h2 style={{ margin: '8px 0 4px' }}>Daily/Weekly Notes</h2>
-        <p style={{ color: '#666' }}>읽은 기술 블로그와 IT 서적을 정리한 내용입니다.</p>
+        <h2 style={{ margin: '8px 0 4px' }}>Tech Notes</h2>
+        <p style={{ color: '#666' }}>기술 블로그 리뷰, IT 서적, 그리고 연구 및 실험 기록입니다.</p>
       </section>
 
       {/* 카테고리 필터 */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {['all', 'daily', 'weekly'].map(category => (
+          {['all', 'it-books', 'tech-blog-review', 'lab-research'].map(category => (
             <button
               key={category}
               onClick={() => handleCategoryChange(category)}

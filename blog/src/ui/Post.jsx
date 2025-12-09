@@ -11,15 +11,18 @@ export default function Post() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`${import.meta.env.BASE_URL}posts/${slug}.md`)
+        const folder = meta?.folder || 'tech-blog-review'
+        const res = await fetch(`${import.meta.env.BASE_URL}posts/${folder}/${slug}.md`)
         const text = await res.text()
         setHtml(marked.parse(text))
       } catch (e) {
         setHtml('<p>Post not found.</p>')
       }
     }
-    load()
-  }, [slug])
+    if (meta) {
+      load()
+    }
+  }, [slug, meta])
 
   if (!meta) return <p>Post not found.</p>
 
