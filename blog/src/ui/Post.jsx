@@ -1,26 +1,26 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { marked } from 'marked'
+import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
 import posts from '../posts.js'
 
-// marked 설정: 코드 블록에 구문 강조 적용
-const renderer = new marked.Renderer()
-renderer.code = (code, language) => {
-  const validLanguage = hljs.getLanguage(language || '') ? language : 'plaintext'
-  const highlighted = hljs.highlight(code, { language: validLanguage }).value
-  return `<pre><code class="hljs language-${validLanguage}">${highlighted}</code></pre>`
-}
-
-marked.setOptions({
-  renderer,
-  breaks: false, // 줄바꿈을 <br>로 변환하지 않음 (강조 문법과 충돌 방지)
-  gfm: true, // GitHub Flavored Markdown 활성화
-  pedantic: false,
-  sanitize: false,
-  smartLists: true,
-  smartypants: false,
+// markdown-it 설정: 코드 블록에 구문 강조 적용
+const md = new MarkdownIt({
+  html: true,
+  linkify: true,
+  typographer: true,
+  breaks: false, // 줄바꿈을 <br>로 변환하지 않음
+  highlight: function (str, lang) {
+    if (lang && hljs.getLanguage(lang)) {
+      try {
+        return '<pre class="hljs"><code>' +
+               hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
+               '</code></pre>';
+      } catch (__) {}
+    }
+    return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
+  }
 })
 
 export default function Post() {
@@ -43,11 +43,18 @@ export default function Post() {
         
         let text = await res.text()
         
+        // 문자열이 아닌 경우 처리
+        if (typeof text !== 'string') {
+          text = String(text || '')
+        }
+        
         // ~~~ 코드 블록을 ```로 변환 (일부 마크다운에서 사용하는 문법)
         text = text.replace(/^~~~(\w*)\n/gm, '```$1\n')
         text = text.replace(/^~~~$/gm, '```')
         
-        setHtml(marked.parse(text))
+        // markdown-it으로 파싱
+        const html = md.render(text)
+        setHtml(html)
       } catch (e) {
         console.error('Error loading post:', e)
         setHtml(`<p>Post not found. Error: ${e.message}</p>`)
@@ -127,9 +134,14 @@ export default function Post() {
           margin-bottom: 16px;
           border: 1px solid #d0d7de;
         }
+        .markdown-body pre.hljs {
+          padding: 16px;
+          overflow: auto;
+          background-color: #f6f8fa;
+          border: 1px solid #d0d7de;
+        }
         .markdown-body pre code {
-          display: inline;
-          max-width: auto;
+          display: block;
           padding: 0;
           margin: 0;
           overflow: visible;
@@ -137,14 +149,16 @@ export default function Post() {
           word-wrap: normal;
           background-color: transparent;
           border: 0;
+          font-size: 100%;
         }
-        .markdown-body pre > code {
+        .markdown-body pre.hljs code {
           display: block;
           padding: 0;
           margin: 0;
           word-break: normal;
           white-space: pre;
           background: transparent;
+          color: inherit;
         }
         .markdown-body blockquote {
           padding: 0 1em;
