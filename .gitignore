@@ -83,6 +83,40 @@ jspm_packages/
 Thumbs.db
 bash.exe.stackdump
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.venv/
+venv/
+ENV/
+env/
+
 # TTS artifacts
 lab/tts/output/
 lab/tts/__pycache__/
@@ -99,3 +133,24 @@ lab/tts/preprocessor/train/checkpoints/
 lab/tts/preprocessor/train/checkpoints_arpabet/
 lab/tts/preprocessor/train/checkpoints_small/
 lab/tts/preprocessor/train/models
+
+# LivePortrait artifacts
+lab/liveportrait/__pycache__/
+lab/liveportrait/*.pkl
+lab/liveportrait/*.mp4
+lab/liveportrait/*.gif
+lab/liveportrait/*.jpg
+lab/liveportrait/*.png
+lab/liveportrait/output/
+lab/liveportrait/LivePortrait/
+lab/liveportrait/pretrained_weights/
+lab/liveportrait/assets/
+lab/liveportrait/docs/
+lab/liveportrait/readme_zh_cn.md
+lab/liveportrait/readme_en.md
+lab/liveportrait/readme.md
+lab/liveportrait/readme.zh_cn.md
+lab/liveportrait/readme.en.md
+lab/liveportrait/readme.md
+lab/liveportrait/readme.zh_cn.md
+lab/liveportrait/readme.en.md
