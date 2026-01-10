@@ -146,11 +146,6 @@ lab/liveportrait/LivePortrait/
 lab/liveportrait/pretrained_weights/
 lab/liveportrait/assets/
 lab/liveportrait/docs/
-lab/liveportrait/readme_zh_cn.md
-lab/liveportrait/readme_en.md
-lab/liveportrait/readme.md
-lab/liveportrait/readme.zh_cn.md
-lab/liveportrait/readme.en.md
-lab/liveportrait/readme.md
-lab/liveportrait/readme.zh_cn.md
-lab/liveportrait/readme.en.md
+lab/liveportrait/*.md
+lab/TensorRT-10.14.1.48/
+lab/liveportrait/tensorrt_engines/

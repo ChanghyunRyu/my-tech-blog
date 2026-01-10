@@ -37,11 +37,18 @@ async def lifespan(app: FastAPI):
     global generator, source_loaded
     
     print("[INFO] LivePortrait server starting...")
+    print("[INFO] TensorRT 기반 프레임 생성기 사용")
+    print("[INFO] Performance optimizations:")
+    print("  - TensorRT: 최적화된 엔진 사용 (appearance, motion, spade)")
+    print("  - PyTorch fallback: TensorRT 엔진이 없을 때 자동 폴백")
+    print("  - CUDA optimizations: cuDNN benchmark, TF32 enabled")
+    print("  - Streaming: real-time frame delivery")
     
-    # FrameGenerator 초기화
+    # FrameGenerator 초기화 (TensorRT 자동 감지)
     try:
         from frame_generator import FrameGenerator
         generator = FrameGenerator(device='auto')  # GPU 자동 감지 (RTX 5090 지원)
+        print("[OK] FrameGenerator 초기화 완료")
         
         # 샘플 이미지 로드
         sample_image = os.path.join(CURRENT_DIR, 'photo', 'sample-image.png')
@@ -176,9 +183,13 @@ async def get_source_image():
     if not source_loaded or generator is None:
         raise HTTPException(status_code=404, detail="소스 이미지가 로드되지 않았습니다.")
     
-    # 중립 표정 프레임 생성
-    frame = generator.generate_frame()
-    base64_image = image_to_base64(frame)
+    # 원본 이미지를 직접 반환 (캐시에서 가져오기)
+    if generator._source_cache is None:
+        raise HTTPException(status_code=404, detail="소스 이미지 캐시가 없습니다.")
+    
+    # 원본 이미지 반환 (RGB numpy array)
+    img_rgb = generator._source_cache['img_rgb']
+    base64_image = image_to_base64(img_rgb)
     
     return {"image": base64_image}
 
@@ -221,9 +232,9 @@ async def generate_expression(request: GenerateRequest):
                 t = i / (total_frames - 1) if total_frames > 1 else 0.0
                 params = expression.interpolate_params(t)
                 
-                # 프레임 생성 (paste_back=False로 최적화)
+                # 프레임 생성 (do_paste_back=True로 원본 이미지에 붙여넣기)
                 frame_start = time.time()
-                frame = generator.generate_frame(**params, paste_back=False)
+                frame = generator.generate_frame(**params, do_paste_back=True)
                 frame_time = time.time() - frame_start
                 
                 # Base64로 변환
