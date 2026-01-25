@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<!-- 의도적으로 lang 속성 누락 - WCAG 위반 -->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A11y Test Page</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .section {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1, h2, h3 { color: #333; }
+    .good { border-left: 4px solid #22c55e; }
+    .bad { border-left: 4px solid #ef4444; }
+    /* 의도적으로 낮은 색상 대비 */
+    .low-contrast {
+      color: #999;
+      background: #aaa;
+      padding: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+    .btn-bad {
+      background: #ddd;
+      color: #ccc; /* 낮은 대비 */
+    }
+    input, textarea {
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 헤더 섹션 - 좋은 예 -->
+  <header class="section good">
+    <h1>Accessibility Test Page</h1>
+    <p>This page contains intentional accessibility issues for testing purposes.</p>
+  </header>
+
+  <!-- 이미지 섹션 - 문제 있음 -->
+  <section class="section bad">
+    <h2>Images</h2>
+
+    <!-- 나쁜 예: alt 속성 누락 -->
+    <img src="https://via.placeholder.com/200x100" width="200" height="100">
+    <p>Image above has no alt text (WCAG violation)</p>
+
+    <!-- 좋은 예: alt 속성 있음 -->
+    <img src="https://via.placeholder.com/200x100" alt="Placeholder image for testing" width="200" height="100">
+    <p>Image above has proper alt text</p>
+  </section>
+
+  <!-- 폼 섹션 - 문제 있음 -->
+  <section class="section bad">
+    <h2>Forms</h2>
+
+    <!-- 나쁜 예: label 없음 -->
+    <input type="text" placeholder="Name (no label)">
+
+    <!-- 나쁜 예: label과 input이 연결 안됨 -->
+    <label>Email</label>
+    <input type="email" placeholder="email@example.com">
+
+    <!-- 좋은 예: 올바른 label 연결 -->
+    <label for="phone">Phone Number</label>
+    <input type="tel" id="phone" placeholder="010-1234-5678">
+
+    <!-- 나쁜 예: 빈 버튼 -->
+    <button type="button"></button>
+
+    <!-- 좋은 예: 내용 있는 버튼 -->
+    <button type="submit" class="btn-primary">Submit Form</button>
+  </section>
+
+  <!-- 색상 대비 섹션 - 문제 있음 -->
+  <section class="section bad">
+    <h2>Color Contrast</h2>
+
+    <!-- 나쁜 예: 낮은 색상 대비 -->
+    <div class="low-contrast">
+      This text has very low color contrast (WCAG violation)
+    </div>
+
+    <!-- 나쁜 예: 버튼의 낮은 대비 -->
+    <button class="btn-bad">Low Contrast Button</button>
+
+    <!-- 좋은 예: 적절한 대비 -->
+    <button class="btn-primary">Good Contrast Button</button>
+  </section>
+
+  <!-- 링크 섹션 - 문제 있음 -->
+  <section class="section bad">
+    <h2>Links</h2>
+
+    <!-- 나쁜 예: 비어있는 링크 -->
+    <a href="https://example.com"></a>
+
+    <!-- 나쁜 예: 의미없는 링크 텍스트 -->
+    <p>For more information, <a href="https://example.com">click here</a>.</p>
+
+    <!-- 좋은 예: 의미있는 링크 텍스트 -->
+    <p>Read our <a href="https://example.com/docs">documentation guide</a> for details.</p>
+  </section>
+
+  <!-- 헤딩 구조 섹션 - 문제 있음 -->
+  <section class="section bad">
+    <!-- h3에서 바로 h5로 건너뛰기 - 순서 위반 -->
+    <h3>Heading Structure</h3>
+    <h5>Skipped heading levels (h3 to h5)</h5>
+    <p>The heading structure above skips from h3 to h5, which is a WCAG violation.</p>
+  </section>
+
+  <!-- 테이블 섹션 - 문제 있음 -->
+  <section class="section bad">
+    <h2>Tables</h2>
+
+    <!-- 나쁜 예: 헤더 없는 테이블 -->
+    <table border="1" style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="padding: 8px;">Name</td>
+        <td style="padding: 8px;">Age</td>
+        <td style="padding: 8px;">City</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px;">Alice</td>
+        <td style="padding: 8px;">25</td>
+        <td style="padding: 8px;">Seoul</td>
+      </tr>
+    </table>
+    <p>Table above has no th elements (screen readers can't identify headers)</p>
+  </section>
+
+  <!-- 좋은 예시 섹션 -->
+  <section class="section good">
+    <h2>Good Examples</h2>
+
+    <!-- 올바른 폼 -->
+    <form>
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" required aria-describedby="username-hint">
+      <small id="username-hint">Enter your username (3-20 characters)</small>
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required>
+
+      <button type="submit" class="btn-primary">Login</button>
+    </form>
+
+    <!-- 올바른 테이블 -->
+    <table border="1" style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+      <caption>User Information</caption>
+      <thead>
+        <tr>
+          <th style="padding: 8px;">Name</th>
+          <th style="padding: 8px;">Age</th>
+          <th style="padding: 8px;">City</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="padding: 8px;">Bob</td>
+          <td style="padding: 8px;">30</td>
+          <td style="padding: 8px;">Busan</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 키보드 접근성 섹션 -->
+  <section class="section bad">
+    <h2>Keyboard Accessibility</h2>
+
+    <!-- 나쁜 예: div를 버튼처럼 사용 (키보드 접근 불가) -->
+    <div style="display: inline-block; padding: 10px 20px; background: #3b82f6; color: white; border-radius: 4px; cursor: pointer;" onclick="alert('clicked')">
+      Fake Button (div)
+    </div>
+    <p>The "button" above is actually a div and can't be accessed via keyboard.</p>
+
+    <!-- 좋은 예: 실제 버튼 -->
+    <button class="btn-primary" onclick="alert('clicked')">
+      Real Button
+    </button>
+  </section>
+
+  <footer class="section good">
+    <p>
+      <strong>Purpose:</strong> This page is used to test the a11y-check.ts script.
+      Run <code>npx tsx scripts/analyze/a11y-check.ts --file scripts/examples/a11y-test.html</code>
+      to see the accessibility report.
+    </p>
+  </footer>
+
+</body>
+</html>
