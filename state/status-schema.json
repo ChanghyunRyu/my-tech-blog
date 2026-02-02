@@ -1,0 +1,192 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Claude Status",
+  "description": "상태 관리 스키마 - 세션, 워크플로우, 작업 상태 추적",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "스키마 버전"
+    },
+    "session": {
+      "type": "object",
+      "description": "현재 세션 정보",
+      "properties": {
+        "id": {
+          "type": ["string", "null"],
+          "description": "세션 고유 ID"
+        },
+        "startedAt": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "세션 시작 시간"
+        },
+        "lastActivity": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "마지막 활동 시간"
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "description": "프로젝트 컨텍스트",
+      "properties": {
+        "language": {
+          "type": ["string", "null"],
+          "enum": ["python", "typescript", "javascript", "go", "rust", "java", null],
+          "description": "주 사용 언어"
+        },
+        "framework": {
+          "type": ["string", "null"],
+          "description": "프레임워크 (FastAPI, React, etc.)"
+        },
+        "testRunner": {
+          "type": ["string", "null"],
+          "enum": ["pytest", "vitest", "jest", "go test", null],
+          "description": "테스트 러너"
+        },
+        "packageManager": {
+          "type": ["string", "null"],
+          "enum": ["pip", "npm", "yarn", "pnpm", "go mod", "cargo", null],
+          "description": "패키지 매니저"
+        }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "description": "활성 워크플로우 상태",
+      "properties": {
+        "active": {
+          "type": ["boolean", "null"],
+          "description": "워크플로우 활성 여부"
+        },
+        "type": {
+          "type": ["string", "null"],
+          "enum": ["pdca", "iteration", "review", null],
+          "description": "워크플로우 유형"
+        },
+        "phase": {
+          "type": ["string", "null"],
+          "enum": ["plan", "do", "check", "act", null],
+          "description": "현재 Phase (PDCA)"
+        },
+        "iteration": {
+          "type": "object",
+          "properties": {
+            "current": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "현재 반복 횟수"
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 5,
+              "description": "최대 반복 횟수"
+            }
+          }
+        },
+        "matchRate": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 100,
+          "description": "설계-구현 일치율 (%)"
+        },
+        "history": {
+          "type": "array",
+          "description": "워크플로우 히스토리",
+          "items": {
+            "type": "object",
+            "properties": {
+              "phase": { "type": "string" },
+              "timestamp": { "type": "string", "format": "date-time" },
+              "matchRate": { "type": "number" },
+              "notes": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "features": {
+      "type": "array",
+      "description": "진행 중인 기능 목록",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "기능 ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "기능 이름"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "in_progress", "completed", "blocked"],
+            "description": "상태"
+          },
+          "matchRate": {
+            "type": ["number", "null"],
+            "description": "일치율"
+          },
+          "files": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "관련 파일"
+          }
+        },
+        "required": ["id", "name", "status"]
+      }
+    },
+    "pendingTasks": {
+      "type": "array",
+      "description": "대기 중인 작업",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["doc-sync", "test-needed", "review-pending", "security-check"],
+            "description": "작업 유형"
+          },
+          "target": {
+            "type": "string",
+            "description": "대상 파일/모듈"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"],
+            "description": "우선순위"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["type", "target"]
+      }
+    },
+    "activeAgents": {
+      "type": "array",
+      "description": "현재 활성 에이전트",
+      "items": {
+        "type": "string"
+      }
+    },
+    "modes": {
+      "type": "object",
+      "description": "활성화된 행동 모드",
+      "properties": {
+        "brainstorm": { "type": "boolean", "default": false },
+        "introspect": { "type": "boolean", "default": false },
+        "taskManage": { "type": "boolean", "default": false },
+        "orchestrate": { "type": "boolean", "default": false },
+        "uc": { "type": "boolean", "default": false },
+        "deepThink": { "type": "boolean", "default": false }
+      }
+    }
+  },
+  "required": ["version", "session", "context", "workflow", "features", "pendingTasks", "activeAgents", "modes"]
+}

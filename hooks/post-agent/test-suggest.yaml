@@ -1,0 +1,16 @@
+name: test-suggest
+description: 코드 구현 완료 후 테스트 추가 제안
+enabled: true
+
+condition: |
+  agent.name in ["code-reviewer"]
+  and result.hasNewFunctions == true
+  and result.testCoverage < 80
+
+actions:
+  - type: suggest
+    message: |
+      새로운 함수가 추가되었지만 테스트 커버리지가 {result.testCoverage}%입니다.
+      테스트를 추가하시겠습니까?
+    suggestAgent: testing-orchestrator
+    priority: medium

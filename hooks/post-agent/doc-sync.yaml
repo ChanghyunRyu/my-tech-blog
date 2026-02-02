@@ -1,0 +1,16 @@
+name: doc-sync
+description: 코드 리뷰 후 공개 API 변경 시 문서 동기화 제안
+enabled: true
+
+condition: |
+  agent.name == "code-reviewer"
+  and result.publicAPIChanged == true
+
+actions:
+  - type: suggest
+    message: "공개 API가 변경되었습니다. 문서 동기화가 필요합니다."
+    suggestAgent: doc-maintainer
+    priority: medium
+
+  - type: log
+    message: "API 변경 감지: {result.changedAPIs}"

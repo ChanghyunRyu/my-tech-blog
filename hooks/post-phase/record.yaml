@@ -1,0 +1,30 @@
+name: phase-record
+description: PDCA Phase 완료 시 상태 기록
+enabled: true
+
+condition: |
+  workflow.type == "pdca"
+  and workflow.active == true
+
+actions:
+  - type: update-status
+    target: .claude/state/.claude-status.json
+    fields:
+      workflow.history:
+        action: append
+        value:
+          phase: "{workflow.phase}"
+          timestamp: "{now}"
+          matchRate: "{workflow.matchRate}"
+          notes: "{workflow.notes}"
+      workflow.lastActivity: "{now}"
+
+  - type: log
+    message: "PDCA Phase 완료: {workflow.phase} (일치율: {workflow.matchRate}%)"
+
+  - type: conditional
+    condition: "workflow.matchRate >= 90"
+    actions:
+      - type: notify
+        message: "목표 일치율 달성! PDCA 사이클 완료"
+        priority: high

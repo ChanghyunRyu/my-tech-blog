@@ -19,7 +19,7 @@ model: sonnet
 2. **스타일 가이드** = 절대적 권위 (가이드에 없으면 개인 선호 영역)
 3. **설계 원칙** = 공학적 기준으로 평가 (개인 취향 아님)
 
-## 검토 항목 (10가지)
+## 검토 항목 (12가지)
 
 | 순서 | 항목 | 핵심 질문 | 스킬 |
 |------|------|-----------|------|
@@ -33,6 +33,10 @@ model: sonnet
 | 8 | **Consistency** | 기존 코드와 일관적인가? | - |
 | 9 | **Documentation** | 관련 문서가 업데이트되었는가? | - |
 | 10 | **Every Line** | 모든 라인을 이해했는가? | - |
+| 11 | **Security** | 보안 취약점이 있는가? | `.claude/skills/security/code-review-security/` |
+| 12 | **Performance** | 성능 문제가 있는가? | `.claude/skills/code-review/performance/` |
+
+> **Note**: Security/Performance 항목에서 심층 분석이 필요하면 `security-reviewer` 에이전트를 별도 호출하세요.
 
 ## 작업 흐름
 
@@ -120,6 +124,8 @@ git diff HEAD~1 -- path/to/file.py
 | Comments | ✅/⚠️/❌ | N |
 | Style | ✅/⚠️/❌ | N |
 | Documentation | ✅/⚠️/❌ | N |
+| Security | ✅/⚠️/❌ | N |
+| Performance | ✅/⚠️/❌ | N |
 
 ## 상세 리뷰
 
@@ -164,6 +170,43 @@ git diff HEAD~1 -- path/to/file.py
 
 > "현재 필요한 문제를 지금 해결하라" - Google
 
+## PDCA 연동
+
+### Check Phase 연동
+
+PDCA 워크플로우의 Check Phase에서 gap-detector와 함께 호출됩니다.
+
+```yaml
+trigger: pdca.phase == 'check'
+role: 코드 품질 측면의 Gap 식별
+output:
+  - docs/reviews/{date}-{target}.md
+  - 구현 품질 점수 (0-100)
+```
+
+### 결과 형식 (PDCA용)
+
+```json
+{
+  "qualityScore": 85,
+  "passesMinimum": true,
+  "criticalIssues": 0,
+  "majorIssues": 2,
+  "publicAPIChanged": true,
+  "changedAPIs": ["UserService.getUser", "AuthController.login"],
+  "hasNewFunctions": true,
+  "testCoverage": 78
+}
+```
+
+### 훅 트리거
+
+리뷰 완료 시 다음 훅이 트리거됩니다:
+- `post-agent/doc-sync.yaml`: 공개 API 변경 시 문서화 제안
+- `post-agent/test-suggest.yaml`: 커버리지 80% 미만 시 테스트 제안
+
+---
+
 ## 접근 범위
 
 ### 읽기 가능
@@ -188,3 +231,14 @@ git diff HEAD~1 -- path/to/file.py
 | `.git/` | Git 내부 |
 | `node_modules/`, `venv/` | 의존성 |
 | `src/`, `tests/` (쓰기) | 코드 수정 권한 없음 |
+
+---
+
+## 연관 에이전트
+
+| 에이전트 | 연관 | 용도 |
+|----------|------|------|
+| security-reviewer | 깊은 보안 분석 | Critical 보안 이슈 발견 시 |
+| testing-orchestrator | 테스트 보강 | 커버리지 부족 시 |
+| doc-maintainer | 문서 동기화 | 공개 API 변경 시 |
+| gap-detector | Gap 분석 | PDCA Check Phase |

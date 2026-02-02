@@ -1,0 +1,13 @@
+name: security-check
+description: 보안 관련 파일 수정 시 security-reviewer 제안
+enabled: true
+
+condition: |
+  file.path matches ".*/(auth|security|crypto|password|token|session).*"
+  or file.content contains ["password", "secret", "token", "api_key", "private_key"]
+
+actions:
+  - type: suggest
+    message: "보안 관련 코드가 수정되었습니다. security-reviewer를 실행하시겠습니까?"
+    suggestAgent: security-reviewer
+    priority: high

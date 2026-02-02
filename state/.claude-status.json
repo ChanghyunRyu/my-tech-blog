@@ -1,0 +1,37 @@
+{
+  "$schema": "./status-schema.json",
+  "version": "1.0.0",
+  "session": {
+    "id": null,
+    "startedAt": null,
+    "lastActivity": null
+  },
+  "context": {
+    "language": null,
+    "framework": null,
+    "testRunner": null,
+    "packageManager": null
+  },
+  "workflow": {
+    "active": null,
+    "type": null,
+    "phase": null,
+    "iteration": {
+      "current": 0,
+      "max": 5
+    },
+    "matchRate": null,
+    "history": []
+  },
+  "features": [],
+  "pendingTasks": [],
+  "activeAgents": [],
+  "modes": {
+    "brainstorm": false,
+    "introspect": false,
+    "taskManage": false,
+    "orchestrate": false,
+    "uc": false,
+    "deepThink": false
+  }
+}
