@@ -149,3 +149,8 @@ lab/liveportrait/docs/
 lab/liveportrait/*.md
 lab/TensorRT-10.14.1.48/
 lab/liveportrait/tensorrt_engines/
+
+# Local development only (NOT tracked by git)
+.claude/
+scripts/
+external/
