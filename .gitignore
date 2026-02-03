@@ -1,3 +1,7 @@
+# claude and scripts
+.claude/
+scripts/
+
 # Dependencies
 node_modules/
 
